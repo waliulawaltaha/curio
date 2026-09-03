@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Curio — a self-hosted bookmark library with collections, tags, and search.">
+<title>Curio</title>
+<meta name="app-version" content="1.0.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1c1f1b;
+    --ink-muted: #5c6259;
+    --ink-faint: #8a9084;
+    --paper: #f3f4f0;
+    --surface: #ffffff;
+    --surface-2: #eceee8;
+    --border: #dcdfd6;
+    --accent: #29604d;
+    --accent-strong: #1e4a3b;
+    --accent-soft: #e2ede7;
+    --favorite: #b8722b;
+    --favorite-soft: #f3e6d6;
+    --danger: #b3432f;
+    --danger-soft: #f5e2dd;
+    --shadow: 0 1px 2px rgba(28, 31, 27, 0.06), 0 4px 14px rgba(28, 31, 27, 0.05);
+    --shadow-lg: 0 8px 30px rgba(28, 31, 27, 0.16), 0 2px 8px rgba(28, 31, 27, 0.08);
+    --radius: 10px;
+    --coll-0: #3e7cb1;
+    --coll-1: #a6486b;
+    --coll-2: #6b5b95;
+    --coll-3: #4c8577;
+    --coll-4: #6b7a3f;
+    --coll-5: #8a5a3b;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e8eae2;
+      --ink-muted: #a2a99a;
+      --ink-faint: #6d7466;
+      --paper: #14160f;
+      --surface: #1c1f18;
+      --surface-2: #242820;
+      --border: #333a2c;
+      --accent: #74c1a1;
+      --accent-strong: #97d6ba;
+      --accent-soft: #23372c;
+      --favorite: #dda05a;
+      --favorite-soft: #372c1c;
+      --danger: #dd8770;
+      --danger-soft: #3a271f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
+      --shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.3);
+      --coll-0: #7eb6e8;
+      --coll-1: #e28fae;
+      --coll-2: #b0a0de;
+      --coll-3: #8fcbba;
+      --coll-4: #b6c97a;
+      --coll-5: #d3986a;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ink: #e8eae2;
+    --ink-muted: #a2a99a;
+    --ink-faint: #6d7466;
+    --paper: #14160f;
+    --surface: #1c1f18;
+    --surface-2: #242820;
+    --border: #333a2c;
+    --accent: #74c1a1;
+    --accent-strong: #97d6ba;
+    --accent-soft: #23372c;
+    --favorite: #dda05a;
+    --favorite-soft: #372c1c;
+    --danger: #dd8770;
+    --danger-soft: #3a271f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 12px 34px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.3);
+    --coll-0: #7eb6e8;
+    --coll-1: #e28fae;
+    --coll-2: #b0a0de;
+    --coll-3: #8fcbba;
+    --coll-4: #b6c97a;
+    --coll-5: #d3986a;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+  }
+
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  [hidden] { display: none !important; }
+
+  /* ---------- app shell ---------- */
+
+  .app {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100%;
+  }
+
+  .sidebar {
+    width: 236px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    padding: 18px 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 30;
+  }
+
+  .sidebar-wordmark {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 8px 4px;
+  }
+
+  .sidebar-wordmark h1 {
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.28rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-wordmark .count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+  }
+
+  .sb-section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    padding: 0 8px;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sb-add {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    padding: 1px 3px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  .sb-add:hover { color: var(--accent); }
+  .sb-add svg { width: 13px; height: 13px; display: block; }
+
+  .sb-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    padding: 7px 8px;
+    border-radius: 7px;
+    font-size: 0.84rem;
+    text-align: left;
+  }
+
+  .sb-row:hover { background: var(--surface-2); color: var(--ink); }
+  .sb-row.active { background: var(--accent-soft); color: var(--accent-strong); font-weight: 500; }
+  .sb-row svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .sb-row .sb-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb-row .sb-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--ink-faint); }
+  .sb-row.active .sb-count { color: var(--accent-strong); }
+
+  .sb-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  .sb-coll-row { position: relative; }
+  .sb-coll-actions {
+    display: none;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .sb-coll-row:hover .sb-coll-actions { display: flex; }
+  .sb-coll-row:hover .sb-count { display: none; }
+  .sb-icon-mini {
+    background: none; border: none; color: var(--ink-faint);
+    padding: 2px; border-radius: 4px; display: flex;
+  }
+  .sb-icon-mini:hover { color: var(--ink); }
+  .sb-icon-mini svg { width: 12px; height: 12px; }
+
+  .sb-new-coll {
+    display: flex;
+    gap: 6px;
+    padding: 2px 8px 0;
+  }
+  .sb-new-coll input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+
+  .sb-tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 8px; }
+
+  .sb-tag {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--ink-muted);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+  }
+  .sb-tag:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .sb-tag.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sb-credit {
+    display: flex; flex-direction: column; gap: 2px;
+    margin-top: 6px; padding: 10px 8px 2px; border-top: 1px solid var(--border);
+    font-size: 0.68rem; color: var(--ink-faint);
+  }
+  .sb-credit a { color: var(--ink-muted); text-decoration: none; }
+  .sb-credit a:hover { color: var(--accent-strong); text-decoration: underline; }
+
+  .sb-backdrop { display: none; }
+
+  @media (max-width: 780px) {
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      box-shadow: var(--shadow-lg);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sb-backdrop.open {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 25;
+    }
+    .menu-btn { display: inline-flex !important; }
+  }
+
+  .main { flex: 1; min-width: 0; }
+
+  /* ---------- top bar ---------- */
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar-inner {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .menu-btn {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 34px; height: 34px;
+    align-items: center; justify-content: center;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .menu-btn svg { width: 16px; height: 16px; }
+
+  .view-title {
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.06rem;
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+
+  .search { position: relative; flex: 1 1 200px; min-width: 150px; }
+
+  .search svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; stroke: var(--ink-faint); pointer-events: none;
+  }
+
+  .search input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.86rem;
+  }
+  .search input::placeholder { color: var(--ink-faint); }
+
+  .kbd-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  select.control {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .icon-toggle-group {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .icon-toggle-group button {
+    background: var(--surface);
+    border: none;
+    color: var(--ink-faint);
+    width: 33px; height: 33px;
+    display: flex; align-items: center; justify-content: center;
+    border-left: 1px solid var(--border);
+  }
+  .icon-toggle-group button:first-child { border-left: none; }
+  .icon-toggle-group button svg { width: 15px; height: 15px; }
+  .icon-toggle-group button.active { background: var(--accent-soft); color: var(--accent-strong); }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--ink-faint); }
+  .btn svg { width: 14px; height: 14px; }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fbfcfa;
+  }
+  .btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+
+  .btn-select.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+
+  /* ---------- content wrap ---------- */
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 110px; }
+
+  .starter-note { margin: 14px 0 0; }
+  .starter-note span {
+    display: inline-block; font-size: 0.76rem; color: var(--ink-faint);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 12px;
+  }
+
+  .status-line {
+    margin: 18px 0 10px;
+    font-size: 0.76rem; color: var(--ink-faint);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+
+  /* ---------- panel (add / edit) ---------- */
+
+  .panel { margin: 16px 0 0; }
+  .panel-inner {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px 16px;
+  }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.wide { grid-column: 1 / -1; }
+  .field label { font-size: 0.72rem; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field textarea, .field select {
+    border: 1px solid var(--border); background: var(--paper); color: var(--ink);
+    border-radius: 7px; padding: 8px 10px; font-size: 0.88rem;
+  }
+  .field textarea { resize: vertical; min-height: 40px; }
+  .field .hint { font-size: 0.72rem; color: var(--ink-faint); }
+  .panel-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 10px; }
+  .fav-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; color: var(--ink-muted); user-select: none; }
+  .fav-toggle input { accent-color: var(--favorite); }
+  .panel-buttons { display: flex; gap: 8px; }
+  .error-line { grid-column: 1 / -1; font-size: 0.78rem; color: var(--danger); margin: -4px 0 0; }
+
+  .dup-warning {
+    grid-column: 1 / -1;
+    background: var(--danger-soft); border: 1px solid var(--danger);
+    color: var(--danger); border-radius: 8px; padding: 10px 12px;
+    font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .dup-warning .btn { padding: 5px 11px; font-size: 0.76rem; }
+
+  /* ---------- grid / list ---------- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .grid.layout-list { grid-template-columns: 1fr; gap: 8px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .layout-list .card { padding: 10px 14px; }
+  .layout-list .card-note { display: none; }
+
+  .card.trashed { opacity: 0.82; }
+
+  .card-top { display: flex; align-items: flex-start; gap: 8px; }
+  .card-check { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+
+  .card-title-wrap { flex: 1; min-width: 0; }
+  .card-title {
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-size: 1rem; font-weight: 600; line-height: 1.32; text-wrap: balance;
+  }
+  .layout-list .card-title { font-size: 0.92rem; }
+  .card-title a { text-decoration: none; }
+  .card-title a:hover { text-decoration: underline; text-decoration-color: var(--ink-faint); }
+
+  .card-icon-row { display: flex; gap: 2px; flex-shrink: 0; }
+  .icon-btn { background: none; border: none; padding: 3px; color: var(--ink-faint); line-height: 1; border-radius: 5px; display: flex; }
+  .icon-btn:hover { background: var(--surface-2); }
+  .icon-btn.active { color: var(--favorite); }
+  .icon-btn.pin-btn.active { color: var(--accent-strong); }
+  .icon-btn svg { width: 15px; height: 15px; display: block; }
+
+  .card-meta {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--ink-faint);
+    display: flex; gap: 7px; align-items: center; flex-wrap: wrap;
+  }
+  .card-meta .dot-sep { opacity: 0.6; }
+  .coll-badge { display: inline-flex; align-items: center; gap: 4px; }
+  .coll-badge .sb-dot { width: 7px; height: 7px; }
+
+  .card-note {
+    font-size: 0.81rem; color: var(--ink-muted); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-pill { background: var(--accent-soft); color: var(--accent-strong); border-radius: 999px; padding: 3px 9px; font-size: 0.68rem; font-weight: 500; }
+
+  .card-footer {
+    margin-top: auto; padding-top: 9px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .open-link { font-size: 0.77rem; font-weight: 500; color: var(--accent-strong); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .open-link:hover { text-decoration: underline; }
+  .footer-actions { display: flex; gap: 2px; align-items: center; }
+
+  .confirm-row { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--danger); flex-wrap: wrap; }
+  .confirm-row button { background: none; border: 1px solid var(--danger); color: var(--danger); border-radius: 6px; padding: 2px 9px; font-size: 0.73rem; }
+  .confirm-row button.cancel { border-color: var(--border); color: var(--ink-muted); }
+
+  .empty-state { margin: 60px 0; text-align: center; color: var(--ink-faint); }
+  .empty-state svg { color: var(--ink-faint); }
+  .empty-state p { font-size: 0.88rem; margin: 6px 0 0; }
+
+  /* ---------- bulk bar ---------- */
+
+  .bulk-bar {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow-lg); padding: 10px 14px; z-index: 40;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: calc(100vw - 32px);
+  }
+  .bulk-count { font-size: 0.8rem; font-weight: 600; color: var(--ink); padding-right: 4px; white-space: nowrap; }
+  .bulk-bar .btn { padding: 6px 11px; font-size: 0.78rem; }
+  .bulk-bar select.control { padding: 6px 8px; font-size: 0.78rem; }
+  .bulk-bar input.tag-input { border: 1px solid var(--border); background: var(--paper); color: var(--ink); border-radius: 7px; padding: 6px 9px; font-size: 0.78rem; width: 110px; }
+  .bulk-sep { width: 1px; height: 20px; background: var(--border); }
+
+  /* ---------- modals (palette / stats / import-export) ---------- */
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(10, 12, 8, 0.42); z-index: 50;
+    display: flex; align-items: flex-start; justify-content: center; padding: 10vh 16px 16px;
+  }
+  .modal-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow-lg); width: 100%; max-width: 560px; max-height: 74vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-card.wide { max-width: 640px; }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .modal-header h2 { font-family: 'IBM Plex Serif', Georgia, serif; font-size: 1.05rem; margin: 0; }
+  .modal-close { background: none; border: none; color: var(--ink-faint); padding: 4px; border-radius: 6px; display: flex; }
+  .modal-close:hover { color: var(--ink); background: var(--surface-2); }
+  .modal-close svg { width: 16px; height: 16px; }
+  .modal-body { padding: 16px 18px 20px; overflow-y: auto; }
+
+  /* palette */
+  .palette-input-row { padding: 4px 18px 12px; border-bottom: 1px solid var(--border); }
+  .palette-input-row input {
+    width: 100%; border: none; background: none; color: var(--ink);
+    font-size: 1rem; padding: 6px 0; outline: none;
+  }
+  .palette-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
+  .palette-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+    font-size: 0.86rem; color: var(--ink); width: 100%; background: none; border: none; text-align: left;
+  }
+  .palette-item .pi-icon { color: var(--ink-faint); flex-shrink: 0; display: flex; }
+  .palette-item .pi-icon svg { width: 15px; height: 15px; }
+  .palette-item .pi-sub { margin-left: auto; font-size: 0.7rem; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace; }
+  .palette-item.highlighted { background: var(--accent-soft); color: var(--accent-strong); }
+  .palette-group-label { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); padding: 10px 10px 4px; }
+
+  /* stats */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-tile { flex: 1 1 110px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stat-tile .num { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .stat-tile .label { font-size: 0.72rem; color: var(--ink-muted); margin-top: 2px; }
+
+  .stats-section { margin-bottom: 20px; }
+  .stats-section h3 { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin: 0 0 10px; font-weight: 600; }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+  .bar-row .bar-label { width: 108px; flex-shrink: 0; font-size: 0.78rem; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 5px; }
+  .bar-row .bar-val { width: 26px; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+  .activity-chart { display: flex; align-items: flex-end; gap: 6px; height: 70px; margin-top: 6px; }
+  .activity-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .activity-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .activity-label { font-size: 0.62rem; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace; }
+
+  /* import/export */
+  .ie-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .file-drop {
+    border: 1.5px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center;
+    color: var(--ink-muted); font-size: 0.84rem; margin-top: 8px;
+  }
+  .file-drop input { margin-top: 10px; }
+  .import-preview { margin-top: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; }
+  .import-preview .btn { margin-top: 10px; }
+
+  /* toast */
+  .toast-stack { position: fixed; bottom: 22px; left: 22px; z-index: 60; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--ink); color: var(--paper); border-radius: 8px; padding: 10px 14px;
+    font-size: 0.82rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-lg);
+    animation: toast-in 0.18s ease;
+  }
+  :root[data-theme="dark"] .toast, @media (prefers-color-scheme: dark) { }
+  .toast button { background: none; border: none; color: var(--accent-strong); font-weight: 600; font-size: 0.8rem; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="sb-backdrop" id="sbBackdrop"></div>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-wordmark">
+      <h1>Curio</h1>
+      <span class="count" id="countLabel">0 saved</span>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Views</div>
+      <div id="viewsList"></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Collections
+        <button type="button" class="sb-add" id="newCollBtn" aria-label="New collection">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div id="collList"></div>
+      <div class="sb-new-coll" id="newCollRow" hidden>
+        <input type="text" id="newCollInput" placeholder="Collection name" maxlength="40">
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-label">Tags</div>
+      <div class="sb-tags" id="sbTags"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button type="button" class="sb-row" id="statsBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="15"/></svg>
+        <span class="sb-label">Stats</span>
+      </button>
+      <button type="button" class="sb-row" id="exportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        <span class="sb-label">Export</span>
+      </button>
+      <button type="button" class="sb-row" id="importBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>
+        <span class="sb-label">Import</span>
+      </button>
+      <div class="sb-credit">
+        <span id="footerVersion"></span>
+        <a href="https://waliulawaltaha.com" target="_blank" rel="noopener noreferrer">Waliul Awal Taha</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <span class="view-title" id="viewTitle">All Bookmarks</span>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="text" placeholder="Search…" autocomplete="off">
+        </div>
+        <select class="control" id="sortSelect">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="title">Title A–Z</option>
+          <option value="opened">Most opened</option>
+        </select>
+        <div class="icon-toggle-group">
+          <button type="button" id="layoutGridBtn" class="active" aria-label="Grid view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button type="button" id="layoutListBtn" aria-label="List view">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+          </button>
+        </div>
+        <button type="button" class="btn btn-select" id="selectModeBtn">Select</button>
+        <button type="button" class="btn" id="paletteBtn">
+          <span class="kbd-hint">⌘K</span>
+        </button>
+        <button class="btn btn-primary" id="toggleAddBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add
+        </button>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="panel" id="addPanel" hidden>
+        <form class="panel-inner" id="addForm" novalidate>
+          <div class="field wide">
+            <label for="fUrl">URL</label>
+            <input id="fUrl" name="url" type="url" placeholder="https://example.com/article" required>
+          </div>
+          <div class="field wide">
+            <label for="fTitle">Title</label>
+            <input id="fTitle" name="title" type="text" placeholder="What is this page called?" required>
+          </div>
+          <div class="field">
+            <label for="fTags">Tags</label>
+            <input id="fTags" name="tags" type="text" placeholder="css, reference">
+            <span class="hint">Comma-separated</span>
+          </div>
+          <div class="field">
+            <label for="fColl">Collection</label>
+            <select id="fColl"><option value="">Uncategorized</option></select>
+          </div>
+          <div class="field wide">
+            <label for="fNote">Note <span style="text-transform:none;font-weight:400;">(optional)</span></label>
+            <input id="fNote" name="note" type="text" placeholder="Why you saved it">
+          </div>
+          <p class="error-line" id="formError" hidden></p>
+          <div class="dup-warning" id="dupWarning" hidden>
+            <span id="dupWarningText"></span>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn" id="dupCancelBtn">Cancel</button>
+              <button type="button" class="btn btn-primary" id="dupSaveAnywayBtn">Save anyway</button>
+            </div>
+          </div>
+          <div class="panel-actions">
+            <label class="fav-toggle"><input type="checkbox" id="fFav"> Favorite</label>
+            <label class="fav-toggle"><input type="checkbox" id="fPin"> Pin to top</label>
+            <div class="panel-buttons">
+              <button type="button" class="btn" id="cancelAddBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="submitAddBtn">Save bookmark</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <p class="starter-note" id="starterNote" hidden><span>Starter picks below — edit, star, or delete them freely</span></p>
+
+      <div class="status-line" id="statusLine" hidden>
+        <span id="resultCount"></span>
+        <span id="storageLabel"></span>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+        <p id="emptyText">No bookmarks match that search.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="bulk-bar" id="bulkBar" hidden></div>
+<div class="toast-stack" id="toastStack"></div>
+
+<div class="modal-backdrop" id="paletteBackdrop" hidden>
+  <div class="modal-card wide">
+    <div class="palette-input-row">
+      <input type="text" id="paletteInput" placeholder="Search bookmarks or run a command…">
+    </div>
+    <div class="palette-list" id="paletteList"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="statsBackdrop" hidden>
+  <div class="modal-card wide">
+    <div class="modal-header"><h2>Stats</h2><button class="modal-close" id="statsCloseBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></div>
+    <div class="modal-body" id="statsBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="exportBackdrop" hidden>
+  <div class="modal-card">
+    <div class="modal-header"><h2>Export</h2><button class="modal-close" id="exportCloseBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></div>
+    <div class="modal-body">
+      <p style="font-size:0.84rem;color:var(--ink-muted);margin:0 0 14px;">Save everything in Curio to a file you can back up or move elsewhere.</p>
+      <div class="ie-actions">
+        <button class="btn btn-primary" id="exportJsonBtn">Export as JSON</button>
+        <button class="btn" id="exportHtmlBtn">Export as bookmarks.html</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="importBackdrop" hidden>
+  <div class="modal-card">
+    <div class="modal-header"><h2>Import</h2><button class="modal-close" id="importCloseBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></div>
+    <div class="modal-body">
+      <p style="font-size:0.84rem;color:var(--ink-muted);margin:0 0 4px;">Bring in a Curio JSON export, or a bookmarks file exported from Chrome, Firefox, or Safari.</p>
+      <div class="file-drop">
+        Choose a <code>.json</code> or <code>.html</code> file
+        <br>
+        <input type="file" id="importFile" accept=".json,.html,.htm">
+      </div>
+      <div class="import-preview" id="importPreview" hidden></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var APP_NAME = "Curio";
+  var APP_VERSION = "1.0.0";
+
+  /* ---------- icons ---------- */
+  var ICON = {
+    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.6l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/></svg>',
+    starFilled: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.6l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/></svg>',
+    pinOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v4M8 3h8l-1 6 3 3v2H6v-2l3-3z"/></svg>',
+    pinFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 17v4M8 3h8l-1 6 3 3v2H6v-2l3-3z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    restore: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+    layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    command: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3a2.5 2.5 0 1 0 0 5h8a2.5 2.5 0 1 0 0-5h-8z"/></svg>'
+  };
+
+  var COLLECTION_COUNT_COLORS = 6;
+
+  var STARTER_BOOKMARKS = [
+    { url: "https://developer.mozilla.org/en-US/docs/Web", title: "MDN Web Docs", note: "The reference for HTML, CSS, and JS.", tags: ["reference", "js", "css"], favorite: true, collectionName: "Dev Docs" },
+    { url: "https://caniuse.com", title: "Can I Use", note: "Browser support tables before you ship a feature.", tags: ["reference", "css"], favorite: false, collectionName: "Dev Docs" },
+    { url: "https://web.dev", title: "web.dev", note: "Performance and modern web platform guidance.", tags: ["reference", "performance"], favorite: false, collectionName: "Dev Docs" },
+    { url: "https://developer.chrome.com/docs/extensions", title: "Chrome Extensions Docs", note: "Manifest V3, APIs, and store policies.", tags: ["extensions", "reference"], favorite: true, collectionName: "Dev Docs" },
+    { url: "https://css-tricks.com", title: "CSS-Tricks", note: "Deep dives and layout recipes.", tags: ["css", "articles"], favorite: false, collectionName: null },
+    { url: "https://fonts.google.com", title: "Google Fonts", note: "Typeface pairing for the next project.", tags: ["design", "typography"], favorite: false, collectionName: null }
+  ];
+
+  var els = {};
+  ["grid", "sidebar", "sbBackdrop", "menuBtn", "viewsList", "collList", "newCollBtn", "newCollRow", "newCollInput",
+   "sbTags", "statsBtn", "exportBtn", "importBtn", "countLabel", "viewTitle", "searchInput", "sortSelect",
+   "layoutGridBtn", "layoutListBtn", "selectModeBtn", "paletteBtn", "toggleAddBtn", "addPanel", "addForm",
+   "fUrl", "fTitle", "fTags", "fColl", "fNote", "fFav", "fPin", "cancelAddBtn", "submitAddBtn", "formError",
+   "dupWarning", "dupWarningText", "dupCancelBtn", "dupSaveAnywayBtn", "starterNote", "statusLine", "resultCount",
+   "storageLabel", "emptyState", "emptyText", "bulkBar", "toastStack", "paletteBackdrop", "paletteInput",
+   "paletteList", "statsBackdrop", "statsCloseBtn", "statsBody", "exportBackdrop", "exportCloseBtn",
+   "exportJsonBtn", "exportHtmlBtn", "importBackdrop", "importCloseBtn", "importFile", "importPreview", "footerVersion"
+  ].forEach(function (id) { els[id] = document.getElementById(id); });
+
+  if (els.footerVersion) els.footerVersion.textContent = APP_NAME + " v" + APP_VERSION;
+
+  var state = {
+    items: [],
+    collections: [],
+    query: "",
+    activeTag: null,
+    view: "all",              // all | pinned | favorites | recent | trash | coll:<id>
+    sort: "newest",
+    layout: "grid",
+    selectMode: false,
+    selectedIds: {},           // map id -> true
+    editingId: null,
+    duplicateOf: null,
+    pendingFormData: null,
+    ready: false,
+    storeMode: "loading",
+    usingStarterSeed: false,
+    seededOnce: false,
+    purgedTrashOnce: false
+  };
+
+  var store = null;
+  var paletteHighlight = 0;
+  var paletteEntries = [];
+
+  /* ---------- helpers ---------- */
+
+  function hostnameOf(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; }
+  }
+
+  function formatDate(ts) {
+    if (!ts) return "";
+    return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function hashIndex(str, mod) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+    return h % mod;
+  }
+
+  function collectionColorVar(id) { return "var(--coll-" + hashIndex(id, COLLECTION_COUNT_COLORS) + ")"; }
+
+  function normalizeUrlKey(url) {
+    try {
+      var u = new URL(url);
+      var host = u.hostname.replace(/^www\./, "").toLowerCase();
+      var path = u.pathname.replace(/\/+$/, "");
+      return host + path;
+    } catch (e) { return (url || "").toLowerCase(); }
+  }
+
+  function collectionById(id) {
+    if (!id) return null;
+    for (var i = 0; i < state.collections.length; i++) { if (state.collections[i].id === id) return state.collections[i]; }
+    return null;
+  }
+
+  function isTypingTarget(el) {
+    if (!el) return false;
+    var tag = el.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+  }
+
+  function toast(message, opts) {
+    opts = opts || {};
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = '<span>' + escapeHtml(message) + '</span>';
+    if (opts.actionLabel) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = opts.actionLabel;
+      btn.addEventListener("click", function () {
+        if (opts.onAction) opts.onAction();
+        el.remove();
+      });
+      el.appendChild(btn);
+    }
+    els.toastStack.appendChild(el);
+    setTimeout(function () { el.remove(); }, 5000);
+  }
+
+  /* ---------- derived data ---------- */
+
+  function activeItems() { return state.items.filter(function (it) { return !it.deletedAt; }); }
+
+  function allTags() {
+    var set = {};
+    activeItems().forEach(function (it) { (it.tags || []).forEach(function (t) { set[t] = (set[t] || 0) + 1; }); });
+    return Object.keys(set).sort(function (a, b) { return set[b] - set[a] || a.localeCompare(b); });
+  }
+
+  function viewFilter(it) {
+    switch (state.view) {
+      case "pinned": return !it.deletedAt && !!it.pinned;
+      case "favorites": return !it.deletedAt && !!it.favorite;
+      case "recent": return !it.deletedAt && !!it.lastOpenedAt;
+      case "trash": return !!it.deletedAt;
+      default:
+        if (state.view.indexOf("coll:") === 0) {
+          var cid = state.view.slice(5);
+          return !it.deletedAt && it.collectionId === cid;
+        }
+        return !it.deletedAt;
+    }
+  }
+
+  function filteredItems() {
+    var q = state.query.trim().toLowerCase();
+    var list = state.items.filter(function (it) {
+      if (!viewFilter(it)) return false;
+      if (state.activeTag && (it.tags || []).indexOf(state.activeTag) === -1) return false;
+      if (!q) return true;
+      var collName = it.collectionId ? (collectionById(it.collectionId) || {}).name || "" : "";
+      var hay = [it.title, it.note, hostnameOf(it.url), collName].concat(it.tags || []).join(" ").toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+
+    if (state.view === "trash") {
+      list.sort(function (a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
+    } else if (state.view === "recent") {
+      list.sort(function (a, b) { return (b.lastOpenedAt || 0) - (a.lastOpenedAt || 0); });
+    } else {
+      var pinnedFirst = list.filter(function (i) { return i.pinned; });
+      var rest = list.filter(function (i) { return !i.pinned; });
+      var cmp;
+      if (state.sort === "oldest") cmp = function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); };
+      else if (state.sort === "title") cmp = function (a, b) { return a.title.localeCompare(b.title); };
+      else if (state.sort === "opened") cmp = function (a, b) { return (b.openCount || 0) - (a.openCount || 0) || (b.lastOpenedAt || 0) - (a.lastOpenedAt || 0); };
+      else cmp = function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); };
+      pinnedFirst.sort(cmp);
+      rest.sort(cmp);
+      list = pinnedFirst.concat(rest);
+    }
+    return list;
+  }
+
+  /* ---------- render: sidebar ---------- */
+
+  function viewCounts() {
+    var active = activeItems();
+    return {
+      all: active.length,
+      pinned: active.filter(function (i) { return i.pinned; }).length,
+      favorites: active.filter(function (i) { return i.favorite; }).length,
+      recent: active.filter(function (i) { return i.lastOpenedAt; }).length,
+      trash: state.items.filter(function (i) { return i.deletedAt; }).length
+    };
+  }
+
+  function renderViews() {
+    var c = viewCounts();
+    var defs = [
+      { key: "all", label: "All Bookmarks", icon: ICON.layers, count: c.all },
+      { key: "pinned", label: "Pinned", icon: ICON.pinOutline, count: c.pinned },
+      { key: "favorites", label: "Favorites", icon: ICON.starOutline, count: c.favorites },
+      { key: "recent", label: "Recently Opened", icon: ICON.clock, count: c.recent },
+      { key: "trash", label: "Trash", icon: ICON.trash, count: c.trash }
+    ];
+    els.viewsList.innerHTML = defs.map(function (d) {
+      return '<button type="button" class="sb-row' + (state.view === d.key ? " active" : "") + '" data-view="' + d.key + '">' +
+        d.icon + '<span class="sb-label">' + d.label + '</span><span class="sb-count">' + d.count + '</span></button>';
+    }).join("");
+  }
+
+  function renderCollections() {
+    var active = activeItems();
+    var html = state.collections.map(function (c) {
+      var count = active.filter(function (i) { return i.collectionId === c.id; }).length;
+      var key = "coll:" + c.id;
+      return '<div class="sb-row sb-coll-row' + (state.view === key ? " active" : "") + '" data-coll-row="' + c.id + '">' +
+        '<button type="button" style="all:unset;display:flex;align-items:center;gap:9px;flex:1;min-width:0;cursor:pointer;" data-view="' + key + '">' +
+          '<span class="sb-dot" style="background:' + collectionColorVar(c.id) + '"></span>' +
+          '<span class="sb-label">' + escapeHtml(c.name) + '</span>' +
+        '</button>' +
+        '<span class="sb-count">' + count + '</span>' +
+        '<span class="sb-coll-actions">' +
+          '<button type="button" class="sb-icon-mini" data-rename="' + c.id + '" aria-label="Rename">' + ICON.edit + '</button>' +
+          '<button type="button" class="sb-icon-mini" data-delcoll="' + c.id + '" aria-label="Delete collection">' + ICON.trash + '</button>' +
+        '</span>' +
+      '</div>';
+    }).join("");
+    els.collList.innerHTML = html;
+  }
+
+  function renderSidebarTags() {
+    var tags = allTags();
+    if (tags.length === 0) { els.sbTags.innerHTML = '<span style="font-size:0.76rem;color:var(--ink-faint);padding:0 4px;">No tags yet</span>'; return; }
+    els.sbTags.innerHTML = tags.map(function (t) {
+      return '<button type="button" class="sb-tag' + (state.activeTag === t ? " active" : "") + '" data-tag="' + escapeHtml(t) + '">' + escapeHtml(t) + '</button>';
+    }).join("");
+  }
+
+  function populateCollectionSelect() {
+    var opts = '<option value="">Uncategorized</option>' + state.collections.map(function (c) {
+      return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    }).join("");
+    els.fColl.innerHTML = opts;
+  }
+
+  /* ---------- render: cards ---------- */
+
+  function cardHtml(it) {
+    var collBadge = "";
+    if (it.collectionId) {
+      var c = collectionById(it.collectionId);
+      if (c) collBadge = '<span class="coll-badge"><span class="sb-dot" style="background:' + collectionColorVar(c.id) + '"></span>' + escapeHtml(c.name) + '</span><span class="dot-sep">·</span>';
+    }
+    var openedBit = it.openCount ? '<span class="dot-sep">·</span><span>opened ' + it.openCount + (it.openCount === 1 ? "×" : "×") + '</span>' : "";
+    var tagsHtml = (it.tags || []).map(function (t) { return '<span class="tag-pill">' + escapeHtml(t) + '</span>'; }).join("");
+    var checkbox = state.selectMode ? '<input type="checkbox" class="card-check" data-select="' + it.id + '"' + (state.selectedIds[it.id] ? " checked" : "") + '>' : "";
+
+    var footer;
+    if (state.view === "trash") {
+      footer = '<span></span><div class="footer-actions">' +
+        '<button type="button" class="icon-btn" data-action="restore" data-id="' + it.id + '" aria-label="Restore">' + ICON.restore + '</button>' +
+        '<button type="button" class="icon-btn" data-action="ask-purge" data-id="' + it.id + '" aria-label="Delete forever">' + ICON.trash + '</button>' +
+      '</div>';
+      if (state.pendingPurgeId === it.id) {
+        footer = '<div class="confirm-row">Delete forever?' +
+          '<button type="button" data-action="confirm-purge" data-id="' + it.id + '">Delete</button>' +
+          '<button type="button" class="cancel" data-action="cancel-purge">Cancel</button></div>';
+      }
+    } else {
+      footer = '<a class="open-link" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer" data-open="' + it.id + '">Open ↗</a>' +
+        '<div class="footer-actions">' +
+        '<button type="button" class="icon-btn" data-action="edit" data-id="' + it.id + '" aria-label="Edit">' + ICON.edit + '</button>' +
+        '<button type="button" class="icon-btn" data-action="trash-item" data-id="' + it.id + '" aria-label="Move to trash">' + ICON.trash + '</button>' +
+        '</div>';
+    }
+
+    return (
+      '<article class="card' + (it.deletedAt ? " trashed" : "") + '">' +
+        '<div class="card-top">' +
+          checkbox +
+          '<div class="card-title-wrap"><h2 class="card-title"><a href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer" data-open="' + it.id + '">' + escapeHtml(it.title) + '</a></h2></div>' +
+          (state.view === "trash" ? "" :
+            '<div class="card-icon-row">' +
+              '<button type="button" class="icon-btn pin-btn' + (it.pinned ? " active" : "") + '" data-action="toggle-pin" data-id="' + it.id + '" aria-label="Toggle pin">' + (it.pinned ? ICON.pinFilled : ICON.pinOutline) + '</button>' +
+              '<button type="button" class="icon-btn' + (it.favorite ? " active" : "") + '" data-action="toggle-fav" data-id="' + it.id + '" aria-label="Toggle favorite">' + (it.favorite ? ICON.starFilled : ICON.starOutline) + '</button>' +
+            '</div>') +
+        '</div>' +
+        '<div class="card-meta">' + collBadge + '<span>' + escapeHtml(hostnameOf(it.url)) + '</span><span class="dot-sep">·</span><span>' + formatDate(it.createdAt) + '</span>' + openedBit + '</div>' +
+        (it.note ? '<p class="card-note">' + escapeHtml(it.note) + '</p>' : "") +
+        (tagsHtml ? '<div class="card-tags">' + tagsHtml + '</div>' : "") +
+        '<div class="card-footer">' + footer + '</div>' +
+      '</article>'
+    );
+  }
+
+  function render() {
+    renderViews();
+    renderCollections();
+    renderSidebarTags();
+    populateCollectionSelect();
+
+    var active = activeItems();
+    els.countLabel.textContent = active.length + (active.length === 1 ? " saved" : " saved");
+    els.starterNote.hidden = !(state.storeMode !== "loading" && state.usingStarterSeed);
+
+    var titles = { all: "All Bookmarks", pinned: "Pinned", favorites: "Favorites", recent: "Recently Opened", trash: "Trash" };
+    if (state.view.indexOf("coll:") === 0) {
+      var c = collectionById(state.view.slice(5));
+      els.viewTitle.textContent = c ? c.name : "Collection";
+    } else {
+      els.viewTitle.textContent = titles[state.view] || "All Bookmarks";
+    }
+
+    var list = filteredItems();
+
+    if (state.storeMode === "loading") {
+      els.statusLine.hidden = true;
+    } else {
+      els.statusLine.hidden = false;
+      els.resultCount.textContent = list.length + (list.length === 1 ? " result" : " results");
+      els.storageLabel.textContent = state.storeMode === "db" ? "Synced" : "Saved on this device";
+    }
+
+    els.grid.classList.toggle("layout-list", state.layout === "list");
+
+    if (list.length === 0) {
+      els.grid.hidden = true;
+      els.emptyState.hidden = false;
+      els.emptyText.textContent = state.view === "trash" ? "Trash is empty."
+        : (active.length === 0 ? "No bookmarks yet — add your first one above." : "No bookmarks match that search or filter.");
+    } else {
+      els.grid.hidden = false;
+      els.emptyState.hidden = true;
+      els.grid.innerHTML = list.map(cardHtml).join("");
+    }
+
+    renderBulkBar();
+  }
+
+  /* ---------- bulk bar ---------- */
+
+  function selectedCount() { return Object.keys(state.selectedIds).length; }
+
+  function renderBulkBar() {
+    var n = selectedCount();
+    if (!state.selectMode || n === 0) { els.bulkBar.hidden = true; els.bulkBar.innerHTML = ""; return; }
+    els.bulkBar.hidden = false;
+
+    if (state.view === "trash") {
+      els.bulkBar.innerHTML =
+        '<span class="bulk-count">' + n + ' selected</span>' +
+        '<button type="button" class="btn" data-bulk="restore">Restore</button>' +
+        '<button type="button" class="btn" data-bulk="purge" style="color:var(--danger);border-color:var(--danger);">Delete forever</button>' +
+        '<button type="button" class="btn" data-bulk="clear">Clear</button>';
+      return;
+    }
+
+    var collOptions = '<option value="">Move to…</option><option value="__none__">Uncategorized</option>' +
+      state.collections.map(function (c) { return '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>'; }).join("");
+
+    els.bulkBar.innerHTML =
+      '<span class="bulk-count">' + n + ' selected</span>' +
+      '<div class="bulk-sep"></div>' +
+      '<input type="text" class="tag-input" id="bulkTagInput" placeholder="Add tag + Enter">' +
+      '<select class="control" id="bulkMoveSelect">' + collOptions + '</select>' +
+      '<button type="button" class="btn" data-bulk="fav">Favorite</button>' +
+      '<button type="button" class="btn" data-bulk="unfav">Unfavorite</button>' +
+      '<div class="bulk-sep"></div>' +
+      '<button type="button" class="btn" data-bulk="trash" style="color:var(--danger);border-color:var(--danger);">Trash</button>' +
+      '<button type="button" class="btn" data-bulk="clear">Clear</button>';
+
+    var tagInput = document.getElementById("bulkTagInput");
+    tagInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && tagInput.value.trim()) {
+        var tag = tagInput.value.trim();
+        Object.keys(state.selectedIds).forEach(function (id) {
+          var it = state.items.find(function (x) { return x.id === id; });
+          if (it) {
+            var tags = (it.tags || []).slice();
+            if (tags.indexOf(tag) === -1) tags.push(tag);
+            store.update(id, { tags: tags });
+          }
+        });
+        tagInput.value = "";
+        toast('Tag "' + tag + '" added to ' + n + ' bookmark' + (n === 1 ? "" : "s"));
+      }
+    });
+    document.getElementById("bulkMoveSelect").addEventListener("change", function (e) {
+      var val = e.target.value;
+      if (!val) return;
+      var cid = val === "__none__" ? null : val;
+      Object.keys(state.selectedIds).forEach(function (id) { store.update(id, { collectionId: cid }); });
+      toast("Moved " + n + " bookmark" + (n === 1 ? "" : "s"));
+      e.target.value = "";
+    });
+  }
+
+  els.bulkBar.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-bulk]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-bulk");
+    var ids = Object.keys(state.selectedIds);
+    if (action === "clear") { state.selectedIds = {}; render(); return; }
+    if (action === "fav") ids.forEach(function (id) { store.update(id, { favorite: true }); });
+    else if (action === "unfav") ids.forEach(function (id) { store.update(id, { favorite: false }); });
+    else if (action === "trash") ids.forEach(function (id) { store.update(id, { deletedAt: Date.now() }); });
+    else if (action === "restore") ids.forEach(function (id) { store.update(id, { deletedAt: null }); });
+    else if (action === "purge") ids.forEach(function (id) { store.remove(id); });
+    toast(ids.length + " bookmark" + (ids.length === 1 ? "" : "s") + " updated");
+    state.selectedIds = {};
+    render();
+  });
+
+  /* ---------- stores ---------- */
+
+  function makeDbStore(db) {
+    var bCol = db.collection("bookmarks");
+    var cCol = db.collection("collections");
+    return {
+      mode: "db",
+      startBookmarks: function (onChange) {
+        bCol.onSnapshot(function (snap) {
+          onChange(snap.docs.map(function (d) {
+            var v = d.data() || {};
+            return {
+              id: d.id, url: v.url || "", title: v.title || "", note: v.note || "",
+              tags: Array.isArray(v.tags) ? v.tags : [], favorite: !!v.favorite, pinned: !!v.pinned,
+              collectionId: v.collectionId || null,
+              createdAt: typeof v.createdAt === "number" ? v.createdAt : 0,
+              openCount: typeof v.openCount === "number" ? v.openCount : 0,
+              lastOpenedAt: typeof v.lastOpenedAt === "number" ? v.lastOpenedAt : 0,
+              deletedAt: typeof v.deletedAt === "number" ? v.deletedAt : null
+            };
+          }));
+        }, function () { onChange(null); });
+      },
+      startCollections: function (onChange) {
+        cCol.onSnapshot(function (snap) {
+          onChange(snap.docs.map(function (d) {
+            var v = d.data() || {};
+            return { id: d.id, name: v.name || "", createdAt: typeof v.createdAt === "number" ? v.createdAt : 0 };
+          }));
+        }, function () { onChange(null); });
+      },
+      seed: function (bookmarkSeeds) {
+        var neededNames = [];
+        bookmarkSeeds.forEach(function (b) { if (b.collectionName && neededNames.indexOf(b.collectionName) === -1) neededNames.push(b.collectionName); });
+        var created = {};
+        var pending = neededNames.length;
+        function addAllBookmarks() {
+          bookmarkSeeds.forEach(function (b, i) {
+            bCol.add({
+              url: b.url, title: b.title, note: b.note || "", tags: b.tags || [], favorite: !!b.favorite,
+              pinned: false, collectionId: b.collectionName ? created[b.collectionName] : null,
+              createdAt: Date.now() - i, openCount: 0, lastOpenedAt: null, deletedAt: null
+            });
+          });
+        }
+        if (pending === 0) { addAllBookmarks(); return; }
+        neededNames.forEach(function (name) {
+          cCol.add({ name: name, createdAt: Date.now() }).then(function (ref) {
+            created[name] = ref.id;
+            pending--;
+            if (pending === 0) addAllBookmarks();
+          });
+        });
+      },
+      add: function (it) {
+        return bCol.add({
+          url: it.url, title: it.title, note: it.note || "", tags: it.tags || [], favorite: !!it.favorite,
+          pinned: !!it.pinned, collectionId: it.collectionId || null, createdAt: Date.now(),
+          openCount: 0, lastOpenedAt: null, deletedAt: null
+        });
+      },
+      update: function (id, patch) { bCol.doc(id).update(patch); },
+      remove: function (id) { bCol.doc(id).delete(); },
+      addCollection: function (name) { return cCol.add({ name: name, createdAt: Date.now() }); },
+      renameCollection: function (id, name) { cCol.doc(id).update({ name: name }); },
+      removeCollection: function (id) { cCol.doc(id).delete(); }
+    };
+  }
+
+  var LOCAL_BOOKMARKS_KEY = "curio.bookmarks.v2";
+  var LOCAL_COLLECTIONS_KEY = "curio.collections.v2";
+
+  function makeLocalStore() {
+    var items = [];
+    var collections = [];
+    var onItemsChange = null;
+    var onCollChange = null;
+
+    function readJson(key) { try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+    function writeJson(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+    function saveItems() { writeJson(LOCAL_BOOKMARKS_KEY, items); if (onItemsChange) onItemsChange(items.slice()); }
+    function saveColls() { writeJson(LOCAL_COLLECTIONS_KEY, collections); if (onCollChange) onCollChange(collections.slice()); }
+    function genId(prefix) { return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
+
+    return {
+      mode: "local",
+      startBookmarks: function (onChange) {
+        onItemsChange = onChange;
+        items = readJson(LOCAL_BOOKMARKS_KEY) || [];
+        onChange(items.slice());
+      },
+      startCollections: function (onChange) {
+        onCollChange = onChange;
+        collections = readJson(LOCAL_COLLECTIONS_KEY) || [];
+        onChange(collections.slice());
+      },
+      seed: function (bookmarkSeeds) {
+        var created = {};
+        bookmarkSeeds.forEach(function (b) {
+          if (b.collectionName && !created[b.collectionName]) {
+            var id = genId("c");
+            created[b.collectionName] = id;
+            collections.push({ id: id, name: b.collectionName, createdAt: Date.now() });
+          }
+        });
+        saveColls();
+        items = bookmarkSeeds.map(function (b, i) {
+          return {
+            id: genId("b"), url: b.url, title: b.title, note: b.note || "", tags: b.tags || [],
+            favorite: !!b.favorite, pinned: false, collectionId: b.collectionName ? created[b.collectionName] : null,
+            createdAt: Date.now() - i, openCount: 0, lastOpenedAt: null, deletedAt: null
+          };
+        });
+        saveItems();
+      },
+      add: function (it) {
+        var newItem = {
+          id: genId("b"), url: it.url, title: it.title, note: it.note || "", tags: it.tags || [],
+          favorite: !!it.favorite, pinned: !!it.pinned, collectionId: it.collectionId || null,
+          createdAt: Date.now(), openCount: 0, lastOpenedAt: null, deletedAt: null
+        };
+        items = items.concat([newItem]);
+        saveItems();
+        return Promise.resolve({ id: newItem.id });
+      },
+      update: function (id, patch) {
+        items = items.map(function (it) { return it.id === id ? Object.assign({}, it, patch) : it; });
+        saveItems();
+      },
+      remove: function (id) { items = items.filter(function (it) { return it.id !== id; }); saveItems(); },
+      addCollection: function (name) {
+        var id = genId("c");
+        collections = collections.concat([{ id: id, name: name, createdAt: Date.now() }]);
+        saveColls();
+        return Promise.resolve({ id: id });
+      },
+      renameCollection: function (id, name) {
+        collections = collections.map(function (c) { return c.id === id ? Object.assign({}, c, { name: name }) : c; });
+        saveColls();
+      },
+      removeCollection: function (id) {
+        collections = collections.filter(function (c) { return c.id !== id; });
+        saveColls();
+      }
+    };
+  }
+
+  /* ---------- store wiring ---------- */
+
+  function onBookmarksChange(items) {
+    if (items === null) { initLocalFallback(); return; }
+    state.items = items;
+    if (items.length === 0 && !state.seededOnce) {
+      state.seededOnce = true;
+      state.usingStarterSeed = true;
+      store.seed(STARTER_BOOKMARKS);
+      return;
+    }
+    state.ready = true;
+    purgeOldTrash();
+    render();
+  }
+
+  function onCollectionsChange(collections) {
+    if (collections === null) return;
+    state.collections = collections;
+    render();
+  }
+
+  function purgeOldTrash() {
+    if (state.purgedTrashOnce) return;
+    state.purgedTrashOnce = true;
+    var cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    state.items.forEach(function (it) { if (it.deletedAt && it.deletedAt < cutoff) store.remove(it.id); });
+  }
+
+  function initLocalFallback() {
+    store = makeLocalStore();
+    state.storeMode = "local";
+    state.seededOnce = false;
+    state.purgedTrashOnce = false;
+    store.startBookmarks(onBookmarksChange);
+    store.startCollections(onCollectionsChange);
+  }
+
+  function initStore() {
+    state.items = STARTER_BOOKMARKS.map(function (it, i) {
+      return { id: "placeholder-" + i, url: it.url, title: it.title, note: it.note, tags: it.tags, favorite: it.favorite, pinned: false, collectionId: null, createdAt: Date.now() - i, openCount: 0, lastOpenedAt: null, deletedAt: null };
+    });
+    state.usingStarterSeed = true;
+    render();
+
+    if (!window.claude || typeof window.claude.use !== "function") { initLocalFallback(); return; }
+
+    window.claude.use("db").then(function (db) {
+      if (!db) { initLocalFallback(); return; }
+      store = makeDbStore(db);
+      state.storeMode = "db";
+      store.startBookmarks(onBookmarksChange);
+      store.startCollections(onCollectionsChange);
+    }).catch(function () { initLocalFallback(); });
+  }
+
+  var downloadsNs = null;
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("downloads").then(function (d) { downloadsNs = d; }).catch(function () {});
+  }
+
+  /* ---------- add / edit form ---------- */
+
+  function openAddPanel(editItem) {
+    els.addPanel.hidden = false;
+    els.formError.hidden = true;
+    els.dupWarning.hidden = true;
+    state.duplicateOf = null;
+    if (editItem) {
+      state.editingId = editItem.id;
+      els.fUrl.value = editItem.url;
+      els.fTitle.value = editItem.title;
+      els.fTags.value = (editItem.tags || []).join(", ");
+      els.fColl.value = editItem.collectionId || "";
+      els.fNote.value = editItem.note || "";
+      els.fFav.checked = !!editItem.favorite;
+      els.fPin.checked = !!editItem.pinned;
+      els.submitAddBtn.textContent = "Save changes";
+    } else {
+      state.editingId = null;
+      els.addForm.reset();
+      if (state.view.indexOf("coll:") === 0) els.fColl.value = state.view.slice(5);
+      els.submitAddBtn.textContent = "Save bookmark";
+    }
+    els.fUrl.focus();
+  }
+
+  function closeAddPanel() { els.addPanel.hidden = true; state.editingId = null; }
+
+  els.toggleAddBtn.addEventListener("click", function () { els.addPanel.hidden ? openAddPanel(null) : closeAddPanel(); });
+  els.cancelAddBtn.addEventListener("click", closeAddPanel);
+
+  function findDuplicate(url, excludeId) {
+    var key = normalizeUrlKey(url);
+    return activeItems().find(function (it) { return it.id !== excludeId && normalizeUrlKey(it.url) === key; });
+  }
+
+  function collectFormData() {
+    var url = els.fUrl.value.trim();
+    var title = els.fTitle.value.trim();
+    var tagsRaw = els.fTags.value.trim();
+    var note = els.fNote.value.trim();
+    var favorite = els.fFav.checked;
+    var pinned = els.fPin.checked;
+    var collectionId = els.fColl.value || null;
+    if (!url || !title) return { error: "A URL and a title are both required." };
+    try {
+      var normalized = /^https?:\/\//i.test(url) ? url : "https://" + url;
+      new URL(normalized);
+      url = normalized;
+    } catch (err) { return { error: "That URL doesn't look valid — check it and try again." }; }
+    var tags = tagsRaw ? tagsRaw.split(",").map(function (t) { return t.trim(); }).filter(Boolean) : [];
+    return { url: url, title: title, note: note, favorite: favorite, pinned: pinned, collectionId: collectionId, tags: tags };
+  }
+
+  function commitFormData(data) {
+    if (state.editingId) store.update(state.editingId, data);
+    else store.add(data);
+    state.usingStarterSeed = false;
+    closeAddPanel();
+    toast(state.editingId ? "Bookmark updated" : "Bookmark saved");
+  }
+
+  els.addForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var data = collectFormData();
+    if (data.error) { els.formError.textContent = data.error; els.formError.hidden = false; return; }
+    els.formError.hidden = true;
+    var dup = findDuplicate(data.url, state.editingId);
+    if (dup) {
+      state.duplicateOf = dup;
+      state.pendingFormData = data;
+      els.dupWarningText.textContent = 'You already saved this as "' + dup.title + '".';
+      els.dupWarning.hidden = false;
+      return;
+    }
+    els.dupWarning.hidden = true;
+    commitFormData(data);
+  });
+
+  els.dupCancelBtn.addEventListener("click", function () { els.dupWarning.hidden = true; state.pendingFormData = null; });
+  els.dupSaveAnywayBtn.addEventListener("click", function () {
+    if (state.pendingFormData) commitFormData(state.pendingFormData);
+    els.dupWarning.hidden = true;
+    state.pendingFormData = null;
+  });
+
+  /* ---------- collections management ---------- */
+
+  els.newCollBtn.addEventListener("click", function () {
+    els.newCollRow.hidden = !els.newCollRow.hidden;
+    if (!els.newCollRow.hidden) els.newCollInput.focus();
+  });
+
+  els.newCollInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && els.newCollInput.value.trim()) {
+      store.addCollection(els.newCollInput.value.trim());
+      els.newCollInput.value = "";
+      els.newCollRow.hidden = true;
+    } else if (e.key === "Escape") {
+      els.newCollInput.value = "";
+      els.newCollRow.hidden = true;
+    }
+  });
+
+  els.collList.addEventListener("click", function (e) {
+    var rename = e.target.closest("[data-rename]");
+    var del = e.target.closest("[data-delcoll]");
+    var view = e.target.closest("[data-view]");
+    if (rename) {
+      var id = rename.getAttribute("data-rename");
+      var c = collectionById(id);
+      var name = prompt("Rename collection", c ? c.name : "");
+      if (name && name.trim()) store.renameCollection(id, name.trim());
+    } else if (del) {
+      var did = del.getAttribute("data-delcoll");
+      var dc = collectionById(did);
+      if (confirm('Delete "' + (dc ? dc.name : "this collection") + '"? Bookmarks inside will become uncategorized.')) {
+        state.items.filter(function (it) { return it.collectionId === did; }).forEach(function (it) { store.update(it.id, { collectionId: null }); });
+        store.removeCollection(did);
+        if (state.view === "coll:" + did) { state.view = "all"; render(); }
+      }
+    } else if (view) {
+      state.view = view.getAttribute("data-view");
+      state.selectedIds = {};
+      render();
+    }
+  });
+
+  /* ---------- sidebar view / tag clicks ---------- */
+
+  els.viewsList.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-view]");
+    if (!btn) return;
+    state.view = btn.getAttribute("data-view");
+    state.selectedIds = {};
+    render();
+    closeMobileSidebar();
+  });
+
+  els.sbTags.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-tag]");
+    if (!btn) return;
+    var t = btn.getAttribute("data-tag");
+    state.activeTag = state.activeTag === t ? null : t;
+    render();
+  });
+
+  /* ---------- card actions ---------- */
+
+  function recordOpen(id) {
+    var it = state.items.find(function (x) { return x.id === id; });
+    if (!it || !store) return;
+    store.update(id, { openCount: (it.openCount || 0) + 1, lastOpenedAt: Date.now() });
+  }
+
+  els.grid.addEventListener("click", function (e) {
+    var openLink = e.target.closest("[data-open]");
+    if (openLink) { recordOpen(openLink.getAttribute("data-open")); return; }
+
+    var checkbox = e.target.closest("[data-select]");
+    if (checkbox) return; // handled by change event
+
+    var btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-action");
+    var id = btn.getAttribute("data-id");
+    var it = state.items.find(function (x) { return x.id === id; });
+
+    if (action === "toggle-fav") { if (it) store.update(id, { favorite: !it.favorite }); }
+    else if (action === "toggle-pin") { if (it) store.update(id, { pinned: !it.pinned }); }
+    else if (action === "edit") { if (it) openAddPanel(it); }
+    else if (action === "trash-item") {
+      store.update(id, { deletedAt: Date.now() });
+      toast("Moved to Trash", { actionLabel: "Undo", onAction: function () { store.update(id, { deletedAt: null }); } });
+    } else if (action === "restore") { store.update(id, { deletedAt: null }); toast("Restored"); }
+    else if (action === "ask-purge") { state.pendingPurgeId = id; render(); }
+    else if (action === "cancel-purge") { state.pendingPurgeId = null; render(); }
+    else if (action === "confirm-purge") { store.remove(id); state.pendingPurgeId = null; toast("Deleted forever"); }
+  });
+
+  els.grid.addEventListener("change", function (e) {
+    var checkbox = e.target.closest("[data-select]");
+    if (!checkbox) return;
+    var id = checkbox.getAttribute("data-select");
+    if (checkbox.checked) state.selectedIds[id] = true; else delete state.selectedIds[id];
+    renderBulkBar();
+  });
+
+  /* ---------- topbar controls ---------- */
+
+  els.searchInput.addEventListener("input", function () { state.query = els.searchInput.value; render(); });
+  els.sortSelect.addEventListener("change", function () { state.sort = els.sortSelect.value; render(); });
+
+  els.layoutGridBtn.addEventListener("click", function () { state.layout = "grid"; els.layoutGridBtn.classList.add("active"); els.layoutListBtn.classList.remove("active"); render(); });
+  els.layoutListBtn.addEventListener("click", function () { state.layout = "list"; els.layoutListBtn.classList.add("active"); els.layoutGridBtn.classList.remove("active"); render(); });
+
+  els.selectModeBtn.addEventListener("click", function () {
+    state.selectMode = !state.selectMode;
+    state.selectedIds = {};
+    els.selectModeBtn.classList.toggle("active", state.selectMode);
+    render();
+  });
+
+  function closeMobileSidebar() { els.sidebar.classList.remove("open"); els.sbBackdrop.classList.remove("open"); }
+  els.menuBtn.addEventListener("click", function () { els.sidebar.classList.toggle("open"); els.sbBackdrop.classList.toggle("open"); });
+  els.sbBackdrop.addEventListener("click", closeMobileSidebar);
+
+  /* ---------- stats modal ---------- */
+
+  function openModal(backdrop) { backdrop.hidden = false; }
+  function closeModal(backdrop) { backdrop.hidden = true; }
+
+  function renderStats() {
+    var active = activeItems();
+    var now = Date.now();
+    var weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    var monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    var addedWeek = active.filter(function (i) { return i.createdAt >= weekAgo; }).length;
+    var addedMonth = active.filter(function (i) { return i.createdAt >= monthAgo; }).length;
+
+    var tagCounts = {};
+    active.forEach(function (i) { (i.tags || []).forEach(function (t) { tagCounts[t] = (tagCounts[t] || 0) + 1; }); });
+    var topTags = Object.keys(tagCounts).map(function (t) { return { name: t, count: tagCounts[t] }; }).sort(function (a, b) { return b.count - a.count; }).slice(0, 6);
+    var maxTag = topTags.length ? topTags[0].count : 1;
+
+    var collCounts = state.collections.map(function (c) {
+      return { name: c.name, count: active.filter(function (i) { return i.collectionId === c.id; }).length };
+    }).sort(function (a, b) { return b.count - a.count; });
+    var maxColl = collCounts.length ? Math.max.apply(null, collCounts.map(function (c) { return c.count; })) || 1 : 1;
+
+    var weeks = [];
+    for (var w = 7; w >= 0; w--) {
+      var start = now - (w + 1) * 7 * 24 * 60 * 60 * 1000;
+      var end = now - w * 7 * 24 * 60 * 60 * 1000;
+      var count = active.filter(function (i) { return i.createdAt >= start && i.createdAt < end; }).length;
+      weeks.push({ label: w === 0 ? "now" : "-" + w + "w", count: count });
+    }
+    var maxWeek = Math.max.apply(null, weeks.map(function (w) { return w.count; })) || 1;
+
+    var html = '';
+    html += '<div class="stats-row">' +
+      '<div class="stat-tile"><div class="num">' + active.length + '</div><div class="label">Total bookmarks</div></div>' +
+      '<div class="stat-tile"><div class="num">' + addedWeek + '</div><div class="label">Added this week</div></div>' +
+      '<div class="stat-tile"><div class="num">' + addedMonth + '</div><div class="label">Added this month</div></div>' +
+      '<div class="stat-tile"><div class="num">' + state.collections.length + '</div><div class="label">Collections</div></div>' +
+    '</div>';
+
+    html += '<div class="stats-section"><h3>Activity, last 8 weeks</h3><div class="activity-chart">' +
+      weeks.map(function (w) {
+        var h = Math.round((w.count / maxWeek) * 60) + (w.count > 0 ? 4 : 0);
+        return '<div class="activity-col"><div class="activity-bar" style="height:' + h + 'px" title="' + w.count + ' added"></div><div class="activity-label">' + w.label + '</div></div>';
+      }).join("") + '</div></div>';
+
+    html += '<div class="stats-section"><h3>Top tags</h3>' + (topTags.length ? topTags.map(function (t) {
+      return '<div class="bar-row"><span class="bar-label">' + escapeHtml(t.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + Math.round((t.count / maxTag) * 100) + '%"></div></div><span class="bar-val">' + t.count + '</span></div>';
+    }).join("") : '<p style="font-size:0.8rem;color:var(--ink-faint);">No tags yet.</p>') + '</div>';
+
+    html += '<div class="stats-section"><h3>Collections</h3>' + (collCounts.length ? collCounts.map(function (c) {
+      return '<div class="bar-row"><span class="bar-label">' + escapeHtml(c.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + Math.round((c.count / maxColl) * 100) + '%"></div></div><span class="bar-val">' + c.count + '</span></div>';
+    }).join("") : '<p style="font-size:0.8rem;color:var(--ink-faint);">No collections yet.</p>') + '</div>';
+
+    els.statsBody.innerHTML = html;
+  }
+
+  els.statsBtn.addEventListener("click", function () { renderStats(); openModal(els.statsBackdrop); closeMobileSidebar(); });
+  els.statsCloseBtn.addEventListener("click", function () { closeModal(els.statsBackdrop); });
+  els.statsBackdrop.addEventListener("click", function (e) { if (e.target === els.statsBackdrop) closeModal(els.statsBackdrop); });
+
+  /* ---------- export ---------- */
+
+  els.exportBtn.addEventListener("click", function () { openModal(els.exportBackdrop); closeMobileSidebar(); });
+  els.exportCloseBtn.addEventListener("click", function () { closeModal(els.exportBackdrop); });
+  els.exportBackdrop.addEventListener("click", function (e) { if (e.target === els.exportBackdrop) closeModal(els.exportBackdrop); });
+
+  function buildExportObjects() {
+    return activeItems().map(function (it) {
+      var c = collectionById(it.collectionId);
+      return { url: it.url, title: it.title, note: it.note, tags: it.tags, favorite: it.favorite, pinned: it.pinned, collection: c ? c.name : null, createdAt: it.createdAt };
+    });
+  }
+
+  function blobDownloadFallback(filename, data) {
+    // Used outside the Claude artifact viewer (e.g. a self-hosted / Docker deployment),
+    // where a plain <a download> works normally.
+    try {
+      var blob = new Blob([data], { type: "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      toast("Saved " + filename);
+    } catch (e) {
+      toast("Couldn't save the file — try again.");
+    }
+  }
+
+  function doDownload(filename, data) {
+    if (downloadsNs) {
+      downloadsNs.save({ filename: filename, data: data }).then(function () {
+        toast("Saved " + filename);
+      }).catch(function (err) {
+        if (err && err.code === "declined") return;
+        toast("Couldn't save the file — try again.");
+      });
+      return;
+    }
+    if (!window.claude) { blobDownloadFallback(filename, data); return; }
+    toast("Downloads aren't available in this view yet — try again in a moment.");
+  }
+
+  els.exportJsonBtn.addEventListener("click", function () {
+    var data = JSON.stringify({ app: APP_NAME, version: APP_VERSION, exportedAt: new Date().toISOString(), bookmarks: buildExportObjects() }, null, 2);
+    doDownload("curio-bookmarks.json", data);
+  });
+
+  els.exportHtmlBtn.addEventListener("click", function () {
+    var byColl = {};
+    var uncategorized = [];
+    activeItems().forEach(function (it) {
+      var c = collectionById(it.collectionId);
+      if (c) { (byColl[c.name] = byColl[c.name] || []).push(it); } else { uncategorized.push(it); }
+    });
+    var lines = [
+      "<!DOCTYPE NETSCAPE-Bookmark-file-1>",
+      '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
+      "<TITLE>Bookmarks</TITLE>",
+      "<H1>Bookmarks</H1>",
+      "<DL><p>"
+    ];
+    function linkLine(it) {
+      var add = Math.round((it.createdAt || Date.now()) / 1000);
+      return '    <DT><A HREF="' + escapeHtml(it.url) + '" ADD_DATE="' + add + '">' + escapeHtml(it.title) + "</A>";
+    }
+    Object.keys(byColl).forEach(function (name) {
+      lines.push("  <DT><H3>" + escapeHtml(name) + "</H3>");
+      lines.push("  <DL><p>");
+      byColl[name].forEach(function (it) { lines.push(linkLine(it)); });
+      lines.push("  </DL><p>");
+    });
+    uncategorized.forEach(function (it) { lines.push(linkLine(it)); });
+    lines.push("</DL><p>");
+    doDownload("curio-bookmarks.html", lines.join("\n"));
+  });
+
+  /* ---------- import ---------- */
+
+  var pendingImport = null;
+
+  els.importBtn.addEventListener("click", function () { openModal(els.importBackdrop); closeMobileSidebar(); els.importPreview.hidden = true; els.importFile.value = ""; pendingImport = null; });
+  els.importCloseBtn.addEventListener("click", function () { closeModal(els.importBackdrop); });
+  els.importBackdrop.addEventListener("click", function (e) { if (e.target === els.importBackdrop) closeModal(els.importBackdrop); });
+
+  function parseJsonImport(text) {
+    var parsed = JSON.parse(text);
+    var arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.bookmarks) ? parsed.bookmarks : []);
+    return arr.filter(function (b) { return b && b.url; }).map(function (b) {
+      return { url: b.url, title: b.title || hostnameOf(b.url), note: b.note || "", tags: Array.isArray(b.tags) ? b.tags : [], favorite: !!b.favorite, collectionName: b.collection || null };
+    });
+  }
+
+  function parseHtmlImport(text) {
+    var doc = new DOMParser().parseFromString(text, "text/html");
+    var results = [];
+    function walk(node, folderName) {
+      var children = node.children ? Array.from(node.children) : [];
+      children.forEach(function (child) {
+        if (child.tagName === "DT") {
+          var h3 = child.querySelector(":scope > H3");
+          var a = child.querySelector(":scope > A");
+          if (h3) {
+            var nextDl = child.querySelector(":scope > DL") || (child.nextElementSibling && child.nextElementSibling.tagName === "DL" ? child.nextElementSibling : null);
+            if (nextDl) walk(nextDl, h3.textContent.trim());
+          } else if (a && a.getAttribute("href")) {
+            results.push({ url: a.getAttribute("href"), title: a.textContent.trim() || hostnameOf(a.getAttribute("href")), note: "", tags: [], favorite: false, collectionName: folderName || null });
+          }
+        } else {
+          walk(child, folderName);
+        }
+      });
+    }
+    var root = doc.querySelector("DL") || doc.body;
+    walk(root, null);
+    return results;
+  }
+
+  els.importFile.addEventListener("change", function () {
+    var file = els.importFile.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      var parsedItems = [];
+      try {
+        if (/\.json$/i.test(file.name)) parsedItems = parseJsonImport(text);
+        else parsedItems = parseHtmlImport(text);
+      } catch (err) {
+        els.importPreview.hidden = false;
+        els.importPreview.innerHTML = '<span style="color:var(--danger);">Couldn\'t read that file — make sure it\'s a Curio JSON export or a browser bookmarks HTML file.</span>';
+        return;
+      }
+      var existingKeys = {};
+      activeItems().forEach(function (it) { existingKeys[normalizeUrlKey(it.url)] = true; });
+      var fresh = parsedItems.filter(function (p) { return !existingKeys[normalizeUrlKey(p.url)]; });
+      var dupeCount = parsedItems.length - fresh.length;
+      pendingImport = fresh;
+      els.importPreview.hidden = false;
+      els.importPreview.innerHTML =
+        '<div>Found <strong>' + parsedItems.length + '</strong> bookmark' + (parsedItems.length === 1 ? "" : "s") + '.' +
+        (dupeCount ? " " + dupeCount + " already saved will be skipped." : "") + '</div>' +
+        '<button type="button" class="btn btn-primary" id="confirmImportBtn">Import ' + fresh.length + ' bookmark' + (fresh.length === 1 ? "" : "s") + '</button>';
+      var confirmBtn = document.getElementById("confirmImportBtn");
+      if (confirmBtn) confirmBtn.addEventListener("click", runImport);
+    };
+    reader.readAsText(file);
+  });
+
+  function runImport() {
+    if (!pendingImport || !pendingImport.length || !store) { closeModal(els.importBackdrop); return; }
+    var neededNames = [];
+    pendingImport.forEach(function (b) {
+      if (b.collectionName && neededNames.indexOf(b.collectionName) === -1 && !state.collections.some(function (c) { return c.name.toLowerCase() === b.collectionName.toLowerCase(); })) {
+        neededNames.push(b.collectionName);
+      }
+    });
+    function addBookmarksNow() {
+      pendingImport.forEach(function (b) {
+        var existing = state.collections.find(function (c) { return b.collectionName && c.name.toLowerCase() === b.collectionName.toLowerCase(); });
+        store.add({ url: b.url, title: b.title, note: b.note, tags: b.tags, favorite: b.favorite, pinned: false, collectionId: existing ? existing.id : null });
+      });
+      toast("Imported " + pendingImport.length + " bookmark" + (pendingImport.length === 1 ? "" : "s"));
+      pendingImport = null;
+      closeModal(els.importBackdrop);
+    }
+    if (neededNames.length === 0) { addBookmarksNow(); return; }
+    var remaining = neededNames.length;
+    neededNames.forEach(function (name) {
+      var res = store.addCollection(name);
+      if (res && typeof res.then === "function") {
+        res.then(function () { remaining--; if (remaining === 0) setTimeout(addBookmarksNow, 30); });
+      } else { remaining--; if (remaining === 0) addBookmarksNow(); }
+    });
+  }
+
+  /* ---------- command palette ---------- */
+
+  function buildPaletteEntries(query) {
+    var q = query.trim().toLowerCase();
+    var entries = [];
+
+    if (!q) {
+      entries.push({ group: "Actions", label: "New bookmark", icon: ICON.plus, run: function () { openAddPanel(null); } });
+      entries.push({ group: "Actions", label: "Export bookmarks", icon: ICON.command, run: function () { openModal(els.exportBackdrop); } });
+      entries.push({ group: "Actions", label: "Import bookmarks", icon: ICON.command, run: function () { openModal(els.importBackdrop); } });
+      entries.push({ group: "Actions", label: "View stats", icon: ICON.command, run: function () { renderStats(); openModal(els.statsBackdrop); } });
+      [["all", "All Bookmarks", ICON.layers], ["pinned", "Pinned", ICON.pinOutline], ["favorites", "Favorites", ICON.starOutline], ["recent", "Recently Opened", ICON.clock], ["trash", "Trash", ICON.trash]].forEach(function (v) {
+        entries.push({ group: "Go to", label: v[1], icon: v[2], run: function () { state.view = v[0]; render(); } });
+      });
+      state.collections.forEach(function (c) {
+        entries.push({ group: "Collections", label: c.name, icon: ICON.folder, run: function () { state.view = "coll:" + c.id; render(); } });
+      });
+    } else {
+      var staticCmds = [
+        { label: "New bookmark", icon: ICON.plus, run: function () { openAddPanel(null); } },
+        { label: "Export bookmarks", icon: ICON.command, run: function () { openModal(els.exportBackdrop); } },
+        { label: "Import bookmarks", icon: ICON.command, run: function () { openModal(els.importBackdrop); } },
+        { label: "View stats", icon: ICON.command, run: function () { renderStats(); openModal(els.statsBackdrop); } }
+      ].filter(function (c) { return c.label.toLowerCase().indexOf(q) !== -1; });
+      staticCmds.forEach(function (c) { entries.push(Object.assign({ group: "Actions" }, c)); });
+
+      var matches = activeItems().filter(function (it) {
+        var hay = [it.title, hostnameOf(it.url)].concat(it.tags || []).join(" ").toLowerCase();
+        return hay.indexOf(q) !== -1;
+      }).slice(0, 8);
+      matches.forEach(function (it) {
+        entries.push({ group: "Bookmarks", label: it.title, sub: hostnameOf(it.url), icon: ICON.layers, run: function () { recordOpen(it.id); window.open(it.url, "_blank", "noopener"); } });
+      });
+    }
+    return entries;
+  }
+
+  function renderPalette() {
+    paletteEntries = buildPaletteEntries(els.paletteInput.value);
+    if (paletteHighlight >= paletteEntries.length) paletteHighlight = Math.max(0, paletteEntries.length - 1);
+    var lastGroup = null;
+    var html = "";
+    if (paletteEntries.length === 0) {
+      html = '<p style="padding:16px;font-size:0.84rem;color:var(--ink-faint);">No matches.</p>';
+    } else {
+      paletteEntries.forEach(function (entry, i) {
+        if (entry.group !== lastGroup) { html += '<div class="palette-group-label">' + entry.group + '</div>'; lastGroup = entry.group; }
+        html += '<button type="button" class="palette-item' + (i === paletteHighlight ? " highlighted" : "") + '" data-idx="' + i + '">' +
+          '<span class="pi-icon">' + entry.icon + '</span><span>' + escapeHtml(entry.label) + '</span>' +
+          (entry.sub ? '<span class="pi-sub">' + escapeHtml(entry.sub) + '</span>' : '') +
+          '</button>';
+      });
+    }
+    els.paletteList.innerHTML = html;
+  }
+
+  function openPalette() {
+    paletteHighlight = 0;
+    els.paletteInput.value = "";
+    openModal(els.paletteBackdrop);
+    renderPalette();
+    setTimeout(function () { els.paletteInput.focus(); }, 10);
+  }
+  function closePalette() { closeModal(els.paletteBackdrop); }
+
+  els.paletteBtn.addEventListener("click", openPalette);
+  els.paletteBackdrop.addEventListener("click", function (e) { if (e.target === els.paletteBackdrop) closePalette(); });
+  els.paletteInput.addEventListener("input", function () { paletteHighlight = 0; renderPalette(); });
+  els.paletteList.addEventListener("click", function (e) {
+    var item = e.target.closest("[data-idx]");
+    if (!item) return;
+    var entry = paletteEntries[parseInt(item.getAttribute("data-idx"), 10)];
+    if (entry) { entry.run(); closePalette(); }
+  });
+  els.paletteInput.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); paletteHighlight = Math.min(paletteEntries.length - 1, paletteHighlight + 1); renderPalette(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); paletteHighlight = Math.max(0, paletteHighlight - 1); renderPalette(); }
+    else if (e.key === "Enter") { e.preventDefault(); var entry = paletteEntries[paletteHighlight]; if (entry) { entry.run(); closePalette(); } }
+    else if (e.key === "Escape") { closePalette(); }
+  });
+
+  /* ---------- global keyboard shortcuts ---------- */
+
+  document.addEventListener("keydown", function (e) {
+    var meta = e.metaKey || e.ctrlKey;
+    if (meta && (e.key === "k" || e.key === "K")) { e.preventDefault(); els.paletteBackdrop.hidden ? openPalette() : closePalette(); return; }
+
+    if (e.key === "Escape") {
+      if (!els.paletteBackdrop.hidden) closePalette();
+      else if (!els.statsBackdrop.hidden) closeModal(els.statsBackdrop);
+      else if (!els.exportBackdrop.hidden) closeModal(els.exportBackdrop);
+      else if (!els.importBackdrop.hidden) closeModal(els.importBackdrop);
+      else if (!els.addPanel.hidden) closeAddPanel();
+      else closeMobileSidebar();
+      return;
+    }
+
+    if (isTypingTarget(document.activeElement)) return;
+
+    if (e.key === "/") { e.preventDefault(); els.searchInput.focus(); }
+    else if (e.key === "n") { e.preventDefault(); openAddPanel(null); }
+    else if (e.key === "f") { state.view = "favorites"; state.selectedIds = {}; render(); }
+    else if (e.key === "p") { state.view = "pinned"; state.selectedIds = {}; render(); }
+    else if (e.key === "r") { state.view = "recent"; state.selectedIds = {}; render(); }
+    else if (e.key === "t") { state.view = "trash"; state.selectedIds = {}; render(); }
+    else if (e.key === "a") { state.view = "all"; state.selectedIds = {}; render(); }
+  });
+
+  initStore();
+})();
+</script>
+</body>
+</html>

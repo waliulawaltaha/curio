@@ -1,0 +1,21 @@
+{
+  "name": "curio",
+  "version": "1.0.0",
+  "description": "A self-hosted bookmark library with collections, tags, search, and a command palette.",
+  "license": "MIT",
+  "author": {
+    "name": "Waliul Awal Taha",
+    "url": "https://waliulawaltaha.com"
+  },
+  "homepage": "https://waliulawaltaha.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waliulawaltaha/curio.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "docker:build": "docker build -t curio:1.0.0 .",
+    "docker:up": "docker compose up -d"
+  }
+}
