@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Curio — a self-hosted bookmark library with collections, tags, and search.">
 <title>Curio</title>
-<meta name="app-version" content="1.0.0">
+<meta name="app-version" content="1.1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -423,6 +423,10 @@
     font-size: 0.76rem; color: var(--ink-faint);
     display: flex; justify-content: space-between; align-items: baseline;
   }
+  .select-all-toggle {
+    background: none; border: none; padding: 0; font: inherit; font-size: 0.76rem;
+    color: var(--accent-strong); cursor: pointer; text-decoration: underline;
+  }
 
   /* ---------- panel (add / edit) ---------- */
 
@@ -616,7 +620,6 @@
     font-size: 0.82rem; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-lg);
     animation: toast-in 0.18s ease;
   }
-  :root[data-theme="dark"] .toast, @media (prefers-color-scheme: dark) { }
   .toast button { background: none; border: none; color: var(--accent-strong); font-weight: 600; font-size: 0.8rem; }
   @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -823,12 +826,47 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="renameBackdrop" hidden>
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-header"><h2>Rename collection</h2><button class="modal-close" id="renameCloseBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></div>
+    <div class="modal-body">
+      <form id="renameForm">
+        <div class="field wide">
+          <label for="renameInput">Name</label>
+          <input type="text" id="renameInput" maxlength="40" required>
+        </div>
+        <div class="panel-buttons" style="justify-content:flex-end;margin-top:14px;">
+          <button type="button" class="btn" id="renameCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="deleteCollBackdrop" hidden>
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-header"><h2>Delete collection</h2><button class="modal-close" id="deleteCollCloseBtn" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></div>
+    <div class="modal-body">
+      <p id="deleteCollText" style="font-size:0.84rem;color:var(--ink-muted);margin:0;"></p>
+      <div class="panel-buttons" style="justify-content:flex-end;margin-top:16px;">
+        <button type="button" class="btn" id="deleteCollCancelBtn">Cancel</button>
+        <button type="button" class="btn" id="deleteCollConfirmBtn" style="color:var(--danger);border-color:var(--danger);">Delete collection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
 
   var APP_NAME = "Curio";
-  var APP_VERSION = "1.0.0";
+  var APP_VERSION = "1.1.0";
 
   /* ---------- icons ---------- */
   var ICON = {
@@ -865,7 +903,9 @@
    "dupWarning", "dupWarningText", "dupCancelBtn", "dupSaveAnywayBtn", "starterNote", "statusLine", "resultCount",
    "storageLabel", "emptyState", "emptyText", "bulkBar", "toastStack", "paletteBackdrop", "paletteInput",
    "paletteList", "statsBackdrop", "statsCloseBtn", "statsBody", "exportBackdrop", "exportCloseBtn",
-   "exportJsonBtn", "exportHtmlBtn", "importBackdrop", "importCloseBtn", "importFile", "importPreview", "footerVersion"
+   "exportJsonBtn", "exportHtmlBtn", "importBackdrop", "importCloseBtn", "importFile", "importPreview", "footerVersion",
+   "renameBackdrop", "renameCloseBtn", "renameForm", "renameInput", "renameCancelBtn",
+   "deleteCollBackdrop", "deleteCollCloseBtn", "deleteCollText", "deleteCollCancelBtn", "deleteCollConfirmBtn"
   ].forEach(function (id) { els[id] = document.getElementById(id); });
 
   if (els.footerVersion) els.footerVersion.textContent = APP_NAME + " v" + APP_VERSION;
@@ -1085,9 +1125,9 @@
       var c = collectionById(it.collectionId);
       if (c) collBadge = '<span class="coll-badge"><span class="sb-dot" style="background:' + collectionColorVar(c.id) + '"></span>' + escapeHtml(c.name) + '</span><span class="dot-sep">·</span>';
     }
-    var openedBit = it.openCount ? '<span class="dot-sep">·</span><span>opened ' + it.openCount + (it.openCount === 1 ? "×" : "×") + '</span>' : "";
+    var openedBit = it.openCount ? '<span class="dot-sep">·</span><span>opened ' + it.openCount + '×</span>' : "";
     var tagsHtml = (it.tags || []).map(function (t) { return '<span class="tag-pill">' + escapeHtml(t) + '</span>'; }).join("");
-    var checkbox = state.selectMode ? '<input type="checkbox" class="card-check" data-select="' + it.id + '"' + (state.selectedIds[it.id] ? " checked" : "") + '>' : "";
+    var checkbox = state.selectMode ? '<input type="checkbox" class="card-check" data-select="' + it.id + '" aria-label="Select ' + escapeHtml(it.title) + '"' + (state.selectedIds[it.id] ? " checked" : "") + '>' : "";
 
     var footer;
     if (state.view === "trash") {
@@ -1127,6 +1167,21 @@
     );
   }
 
+  function renderStatusLine(list) {
+    if (state.storeMode === "loading") {
+      els.statusLine.hidden = true;
+      return;
+    }
+    els.statusLine.hidden = false;
+    var countText = list.length + (list.length === 1 ? " result" : " results");
+    if (state.selectMode && list.length > 0) {
+      var allSelected = list.every(function (i) { return state.selectedIds[i.id]; });
+      countText += ' · <button type="button" id="selectAllToggle" class="select-all-toggle">' + (allSelected ? "Deselect all" : "Select all") + '</button>';
+    }
+    els.resultCount.innerHTML = countText;
+    els.storageLabel.textContent = state.storeMode === "db" ? "Synced" : "Saved on this device";
+  }
+
   function render() {
     renderViews();
     renderCollections();
@@ -1147,13 +1202,7 @@
 
     var list = filteredItems();
 
-    if (state.storeMode === "loading") {
-      els.statusLine.hidden = true;
-    } else {
-      els.statusLine.hidden = false;
-      els.resultCount.textContent = list.length + (list.length === 1 ? " result" : " results");
-      els.storageLabel.textContent = state.storeMode === "db" ? "Synced" : "Saved on this device";
-    }
+    renderStatusLine(list);
 
     els.grid.classList.toggle("layout-list", state.layout === "list");
 
@@ -1294,6 +1343,9 @@
         neededNames.forEach(function (name) {
           cCol.add({ name: name, createdAt: Date.now() }).then(function (ref) {
             created[name] = ref.id;
+          }).catch(function () {
+            // Collection failed to create — its bookmarks just land uncategorized instead of stalling the seed.
+          }).then(function () {
             pending--;
             if (pending === 0) addAllBookmarks();
           });
@@ -1306,11 +1358,11 @@
           openCount: 0, lastOpenedAt: null, deletedAt: null
         });
       },
-      update: function (id, patch) { bCol.doc(id).update(patch); },
-      remove: function (id) { bCol.doc(id).delete(); },
+      update: function (id, patch) { bCol.doc(id).update(patch).catch(function () { toast("Couldn't save that change — try again."); }); },
+      remove: function (id) { bCol.doc(id).delete().catch(function () { toast("Couldn't delete that — try again."); }); },
       addCollection: function (name) { return cCol.add({ name: name, createdAt: Date.now() }); },
-      renameCollection: function (id, name) { cCol.doc(id).update({ name: name }); },
-      removeCollection: function (id) { cCol.doc(id).delete(); }
+      renameCollection: function (id, name) { cCol.doc(id).update({ name: name }).catch(function () { toast("Couldn't rename that collection — try again."); }); },
+      removeCollection: function (id) { cCol.doc(id).delete().catch(function () { toast("Couldn't delete that collection — try again."); }); }
     };
   }
 
@@ -1557,23 +1609,61 @@
     }
   });
 
+  var renamingCollId = null;
+  var deletingCollId = null;
+
+  function openRenameModal(id) {
+    var c = collectionById(id);
+    if (!c) return;
+    renamingCollId = id;
+    els.renameInput.value = c.name;
+    openModal(els.renameBackdrop);
+    setTimeout(function () { els.renameInput.focus(); els.renameInput.select(); }, 10);
+  }
+  function closeRenameModal() { closeModal(els.renameBackdrop); renamingCollId = null; }
+
+  els.renameForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = els.renameInput.value.trim();
+    if (name && renamingCollId) store.renameCollection(renamingCollId, name);
+    closeRenameModal();
+  });
+  els.renameCancelBtn.addEventListener("click", closeRenameModal);
+  els.renameCloseBtn.addEventListener("click", closeRenameModal);
+  els.renameBackdrop.addEventListener("click", function (e) { if (e.target === els.renameBackdrop) closeRenameModal(); });
+
+  function openDeleteCollModal(id) {
+    var c = collectionById(id);
+    if (!c) return;
+    deletingCollId = id;
+    var count = activeItems().filter(function (it) { return it.collectionId === id; }).length;
+    els.deleteCollText.textContent = 'Delete "' + c.name + '"? ' +
+      (count ? count + " bookmark" + (count === 1 ? "" : "s") + " inside will become uncategorized — they won't be deleted." : "It has no bookmarks in it.");
+    openModal(els.deleteCollBackdrop);
+  }
+  function closeDeleteCollModal() { closeModal(els.deleteCollBackdrop); deletingCollId = null; }
+
+  els.deleteCollConfirmBtn.addEventListener("click", function () {
+    if (!deletingCollId) return;
+    var did = deletingCollId;
+    state.items.filter(function (it) { return it.collectionId === did; }).forEach(function (it) { store.update(it.id, { collectionId: null }); });
+    store.removeCollection(did);
+    if (state.view === "coll:" + did) { state.view = "all"; render(); }
+    closeDeleteCollModal();
+    toast("Collection deleted");
+  });
+  els.deleteCollCancelBtn.addEventListener("click", closeDeleteCollModal);
+  els.deleteCollCloseBtn.addEventListener("click", closeDeleteCollModal);
+  els.deleteCollBackdrop.addEventListener("click", function (e) { if (e.target === els.deleteCollBackdrop) closeDeleteCollModal(); });
+
   els.collList.addEventListener("click", function (e) {
     var rename = e.target.closest("[data-rename]");
     var del = e.target.closest("[data-delcoll]");
     var view = e.target.closest("[data-view]");
     if (rename) {
-      var id = rename.getAttribute("data-rename");
-      var c = collectionById(id);
-      var name = prompt("Rename collection", c ? c.name : "");
-      if (name && name.trim()) store.renameCollection(id, name.trim());
+      openRenameModal(rename.getAttribute("data-rename"));
     } else if (del) {
-      var did = del.getAttribute("data-delcoll");
-      var dc = collectionById(did);
-      if (confirm('Delete "' + (dc ? dc.name : "this collection") + '"? Bookmarks inside will become uncategorized.')) {
-        state.items.filter(function (it) { return it.collectionId === did; }).forEach(function (it) { store.update(it.id, { collectionId: null }); });
-        store.removeCollection(did);
-        if (state.view === "coll:" + did) { state.view = "all"; render(); }
-      }
+      openDeleteCollModal(del.getAttribute("data-delcoll"));
     } else if (view) {
       state.view = view.getAttribute("data-view");
       state.selectedIds = {};
@@ -1608,6 +1698,14 @@
     store.update(id, { openCount: (it.openCount || 0) + 1, lastOpenedAt: Date.now() });
   }
 
+  // Middle-click / ctrl+click opens a link without a "click" event firing (browsers
+  // fire "auxclick" instead) — listen there too so open counts stay accurate.
+  els.grid.addEventListener("auxclick", function (e) {
+    if (e.button !== 1) return;
+    var openLink = e.target.closest("[data-open]");
+    if (openLink) recordOpen(openLink.getAttribute("data-open"));
+  });
+
   els.grid.addEventListener("click", function (e) {
     var openLink = e.target.closest("[data-open]");
     if (openLink) { recordOpen(openLink.getAttribute("data-open")); return; }
@@ -1639,6 +1737,15 @@
     var id = checkbox.getAttribute("data-select");
     if (checkbox.checked) state.selectedIds[id] = true; else delete state.selectedIds[id];
     renderBulkBar();
+    renderStatusLine(filteredItems());
+  });
+
+  els.statusLine.addEventListener("click", function (e) {
+    if (!e.target.closest("#selectAllToggle")) return;
+    var list = filteredItems();
+    var allSelected = list.every(function (i) { return state.selectedIds[i.id]; });
+    if (allSelected) { state.selectedIds = {}; } else { list.forEach(function (i) { state.selectedIds[i.id] = true; }); }
+    render();
   });
 
   /* ---------- topbar controls ---------- */
@@ -1892,11 +1999,11 @@
     }
     if (neededNames.length === 0) { addBookmarksNow(); return; }
     var remaining = neededNames.length;
+    function settleOne() { remaining--; if (remaining === 0) setTimeout(addBookmarksNow, 30); }
     neededNames.forEach(function (name) {
       var res = store.addCollection(name);
-      if (res && typeof res.then === "function") {
-        res.then(function () { remaining--; if (remaining === 0) setTimeout(addBookmarksNow, 30); });
-      } else { remaining--; if (remaining === 0) addBookmarksNow(); }
+      if (res && typeof res.then === "function") res.then(settleOne).catch(settleOne);
+      else settleOne();
     });
   }
 
@@ -1983,12 +2090,19 @@
 
   /* ---------- global keyboard shortcuts ---------- */
 
+  function isAnyModalOpen() {
+    return !els.paletteBackdrop.hidden || !els.statsBackdrop.hidden || !els.exportBackdrop.hidden ||
+      !els.importBackdrop.hidden || !els.renameBackdrop.hidden || !els.deleteCollBackdrop.hidden;
+  }
+
   document.addEventListener("keydown", function (e) {
     var meta = e.metaKey || e.ctrlKey;
     if (meta && (e.key === "k" || e.key === "K")) { e.preventDefault(); els.paletteBackdrop.hidden ? openPalette() : closePalette(); return; }
 
     if (e.key === "Escape") {
       if (!els.paletteBackdrop.hidden) closePalette();
+      else if (!els.renameBackdrop.hidden) closeRenameModal();
+      else if (!els.deleteCollBackdrop.hidden) closeDeleteCollModal();
       else if (!els.statsBackdrop.hidden) closeModal(els.statsBackdrop);
       else if (!els.exportBackdrop.hidden) closeModal(els.exportBackdrop);
       else if (!els.importBackdrop.hidden) closeModal(els.importBackdrop);
@@ -1998,9 +2112,10 @@
     }
 
     if (isTypingTarget(document.activeElement)) return;
+    if (isAnyModalOpen()) return;
 
     if (e.key === "/") { e.preventDefault(); els.searchInput.focus(); }
-    else if (e.key === "n") { e.preventDefault(); openAddPanel(null); }
+    else if (e.key === "n") { if (els.addPanel.hidden) { e.preventDefault(); openAddPanel(null); } }
     else if (e.key === "f") { state.view = "favorites"; state.selectedIds = {}; render(); }
     else if (e.key === "p") { state.view = "pinned"; state.selectedIds = {}; render(); }
     else if (e.key === "r") { state.view = "recent"; state.selectedIds = {}; render(); }

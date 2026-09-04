@@ -62,7 +62,7 @@ Vanilla HTML/CSS/JS, no dependencies, no build tooling. Fonts load from Google F
 
 ## Versioning
 
-Current version: **1.0.0** — shown in the sidebar footer.
+Current version: **1.1.0** — shown in the sidebar footer. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## License
 

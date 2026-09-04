@@ -5,7 +5,7 @@ FROM nginx:1.27-alpine
 
 LABEL org.opencontainers.image.title="Curio" \
       org.opencontainers.image.description="A self-hosted bookmark library with collections, tags, and search." \
-      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.version="1.1.0" \
       org.opencontainers.image.authors="Waliul Awal Taha <https://waliulawaltaha.com>" \
       org.opencontainers.image.licenses="MIT"
 
